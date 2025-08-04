@@ -32,7 +32,7 @@ contract Tributqry {
     function createInvoice(address _contractor, address _client , uint _amount) public{
         require(msg.sender == _contractor, "Only contractor can create invoice");
         require(_contractor != _client, "The client cannot be the contractor");
-        require(_amount >= 0);//change the minimum amount in the future
+        require(_amount > 0, "The amount of the contract cannot be 0");//change the minimum amount in the future
         bytes32 invoiceId = _generateInvoiceId(msg.sender, _contractor, _client);
         
         invoices[invoiceId] = Invoice(msg.sender, _client, _contractor, InvoiceStatus.UNPAID, _amount, 0);
@@ -41,7 +41,7 @@ contract Tributqry {
 
     }
     function getInvoice(bytes32 _invoiceId) public view returns(Invoice memory){
-        require(invoices[_invoiceId].client != address(0), "Invoice doees not exists");
+        require(invoices[_invoiceId].client != address(0), "Invoice does not exists");
         return invoices[_invoiceId];
     }
 
