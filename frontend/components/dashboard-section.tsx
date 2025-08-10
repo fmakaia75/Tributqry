@@ -2,10 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { InvoiceCard } from "./invoice-card"
 import { Skeleton } from "@/components/ui/skeleton"
 
-interface Invoice {
+export interface Invoice {
   id: string
   amount: number
-  status: "paid" | "unpaid" | "pending"
+  status: "PAID" | "UNPAID" | "PENDING"
   contractor: string
   client: string
   createdAt: string
@@ -18,6 +18,7 @@ interface DashboardSectionProps {
   isLoading?: boolean
   showPayButton?: boolean
   emptyMessage?: string
+  handleUpdate?: (type: boolean, invoiceId: string) => void
 }
 
 export function DashboardSection({
@@ -26,7 +27,10 @@ export function DashboardSection({
   isLoading = false,
   showPayButton = false,
   emptyMessage = "No invoices found",
+  handleUpdate
 }: DashboardSectionProps) {
+
+
   if (isLoading) {
     return (
       <Card className="bg-gray-900/50 border-gray-800">
@@ -89,7 +93,7 @@ export function DashboardSection({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {invoices.map((invoice) => (
-              <InvoiceCard key={invoice.id} invoice={invoice} showPayButton={showPayButton} />
+              <InvoiceCard key={invoice.id} invoice={invoice} showPayButton={showPayButton} handleUpdate={handleUpdate} />
             ))}
           </div>
         )}

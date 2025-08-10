@@ -2,11 +2,14 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { ExternalLink, DollarSign, User, Building } from "lucide-react"
-
+import { useWriteContract, useWaitForTransactionReceipt, waitForTransactionReceipt } from "wagmi"
+import { useEffect, useState } from "react"
+import { TRIBUTQRY_CONFIG, MOCK_USDC_CONFIG } from "@/lib/contracts"
+import { Loader2 } from "lucide-react"
 interface Invoice {
   id: string
   amount: number
-  status: "paid" | "unpaid" | "pending"
+  status: "PAID" | "UNPAID" | "PENDING"
   contractor: string
   client: string
   createdAt: string
@@ -16,9 +19,50 @@ interface Invoice {
 interface InvoiceCardProps {
   invoice: Invoice
   showPayButton?: boolean
+  handleUpdate: (type:boolean, invoice: string)=>void
 }
 
-export function InvoiceCard({ invoice, showPayButton = false }: InvoiceCardProps) {
+export function InvoiceCard({ invoice, showPayButton = false, handleUpdate}: InvoiceCardProps) {
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { writeContract, data: hash } = useWriteContract();
+
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
+    hash,
+  });
+
+
+  const handlePayInvoice = async () => {
+    if (isProcessing || isConfirming) return;
+    setIsProcessing(true)
+    try {
+
+      await writeContract({
+        address: MOCK_USDC_CONFIG.address, 
+        abi: MOCK_USDC_CONFIG.abi,
+        functionName: 'approve',
+        args: [TRIBUTQRY_CONFIG.address, invoice.amount], 
+      });
+
+      writeContract({
+        address: TRIBUTQRY_CONFIG.address,
+        abi: TRIBUTQRY_CONFIG.abi,
+        functionName: 'payInvoice',
+        args: [invoice.id]
+      });
+
+    } catch (error) {
+      console.log(error)
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+  useEffect(() => {
+    if (isSuccess) {
+      console.log('Payment confirmed!!')
+      //wew need to update the status of the payment in the payableByMe Array
+      handleUpdate(false,invoice.id)
+    }
+  }, [isSuccess])
   const getStatusColor = (status: string) => {
     switch (status) {
       case "paid":
@@ -41,7 +85,7 @@ export function InvoiceCard({ invoice, showPayButton = false }: InvoiceCardProps
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <span className="text-sm font-mono text-gray-400">#{invoice.id}</span>
+            <span className="text-sm font-mono text-gray-400">#INV-{invoice.id.slice(0, 4)}</span>
             <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-gray-400 hover:text-white">
               <ExternalLink className="h-3 w-3" />
             </Button>
@@ -52,7 +96,7 @@ export function InvoiceCard({ invoice, showPayButton = false }: InvoiceCardProps
       <CardContent className="space-y-4">
         <div className="flex items-center space-x-2">
           <DollarSign className="h-5 w-5 text-green-400" />
-          <span className="text-2xl font-bold text-white">{invoice.amount.toLocaleString()}</span>
+          <span className="text-2xl font-bold text-white">{(invoice.amount/1000000).toLocaleString()}</span>
           <span className="text-sm text-gray-400">USDC</span>
         </div>
 
@@ -74,9 +118,16 @@ export function InvoiceCard({ invoice, showPayButton = false }: InvoiceCardProps
           <span>Due: {invoice.dueDate}</span>
         </div>
 
-        {showPayButton && invoice.status === "unpaid" && (
-          <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0">
-            Pay Invoice
+        {showPayButton && invoice.status === "UNPAID" && (
+          <Button onClick={handlePayInvoice} className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0">
+            {isProcessing || isConfirming ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {isProcessing ? "Préparation..." : "Confirmation..."}
+              </>
+            ) : (
+              "Pay Invoice"
+            )}
           </Button>
         )}
       </CardContent>

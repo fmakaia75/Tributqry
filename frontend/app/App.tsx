@@ -1,42 +1,18 @@
 "use client";
 
-import '@rainbow-me/rainbowkit/styles.css';
-import {
-  getDefaultConfig,
-  RainbowKitProvider,
-} from '@rainbow-me/rainbowkit';
-import { WagmiProvider } from 'wagmi';
-import {
-  mainnet,
-  polygon,
-  optimism,
-  arbitrum,
-  base,
-} from 'wagmi/chains';
-import {
-  QueryClientProvider,
-  QueryClient,
-} from "@tanstack/react-query";
+import { ReactNode } from "react";
+import { config, WagmiProvider, queryClient, QueryClientProvider, RainbowKitProvider } from "../lib/wagmi";
 
-import { localhost } from 'wagmi/chains'
-
-const config = getDefaultConfig({
-  appName: 'Tributqry',
-  projectId: 'dummy', 
-  chains: [localhost],
-});
-const queryClient = new QueryClient();
-
-function App({children}:{children: ReactNode}){
-                return (
-                                <WagmiProvider config={config}>
-                                <QueryClientProvider client={queryClient}>
+function App({ children }: { children: ReactNode }) {
+        return (
+                <WagmiProvider config={config}>
+                        <QueryClientProvider client={queryClient}>
                                 <RainbowKitProvider>
-                                {children}
+                                        {children}
                                 </RainbowKitProvider>
-                                </QueryClientProvider>
-                                </WagmiProvider>
-                );
-        }
+                        </QueryClientProvider>
+                </WagmiProvider>
+        );
+}
 
 export default App;
